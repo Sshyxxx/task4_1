@@ -13,7 +13,7 @@ namespace task4_1
     internal class OneDArray<T> : IArray<T> where T : IComparable<T>
     {
         private int _size;
-
+        private int _capacity;
         const int default_size = 4;
 
         private T[] _array;
@@ -27,45 +27,37 @@ namespace task4_1
         //Создание массива с ёмкостью по умолчанию.
         public OneDArray()
         {
-            _array = new T[default_size];
+            _size = 0;
+            _array = new T[0];
         }
 
         //Создание массива заданной ёмкости.
-        public OneDArray(int size)
+        public OneDArray(int capacity)
         {
-            _array = new T[size];
+            _capacity = capacity;
+            _array = new T[capacity];
+            _size = 0;
         }
 
         //Добавление элемента в массив. Если массив заполнен, увеличить его ёмкость по правилу 2n + 1 и добавить элемент на первую свободную позицию.
         public void Add(T elem)
         {
-            if (_array.Length == 0 || _size == _array.Length)
+            if (_size >= _capacity)
             {
-                _size = 2 * _size + 1;
+                _capacity = 2 * _capacity + 1;
                 Array.Resize(ref _array, _size);
             }
-            _array.Append(elem);
+            _array[_size] = elem;
+            _size++;
+            //_array.Append(elem);
         }
+
 
         //Удаление элемента из массива.
         public void Remove(T elem)
         {
-            T[] temp_array = new T[_size];
-
             int index = Array.IndexOf(_array, elem);
-
-            for (int i = 0; i < _size; i++)
-            {
-                if (i == index)
-                {
-                    continue;
-                }
-                else
-                {
-                    temp_array.Append(temp_array[i]);
-                }
-            }
-            _array = temp_array;
+            Array.Clear(_array, index, 1);
         }
 
         //Сортировка массива.
@@ -81,19 +73,25 @@ namespace task4_1
         }
 
         //Подсчет количества элементов в массиве, удовлетворяющих переданному условию.
-        public int Count(bool condition)
+        public int Count(Func<T, bool> condition)
         {
             int count = 0;
-            if(condition) count++;
+            foreach (T elem in _array)
+            {
+                if (condition(elem))
+                {
+                    count++;
+                }
+            }
             return count;
         }
 
         //Проверка выполнения переданного условия хотя бы одного элемента массива.
-        public bool Check(bool condition)
+        public bool Check(Func<T, bool> condition)
         {
             foreach (T elem in _array)
             {
-                if(condition)
+                if(condition(elem))
                 {
                     return true;
                 }
@@ -102,11 +100,11 @@ namespace task4_1
         }
 
         //Проверка выполнения переданного условия для всех элементов массива.
-        public bool CheckAll(bool condition)
+        public bool CheckAll(Func<T, bool> condition)
         {
             foreach (T elem in _array)
             {
-                if (!condition)
+                if (!condition(elem))
                 {
                     return false;
                 }
@@ -122,15 +120,18 @@ namespace task4_1
             return true;
         }
 
-       
-
-
         //Получение первого элемента в массиве, удовлетворяющего условию.
-        public T? FindFirst(T el)
+        public bool FindFirst(Func<T, bool> condition, ref T elem)
         {
-            T? first = Array.Find(_array, MyFunc);
-            return first;
-
+            for (int i = 0; i < _size; i++)
+            {
+                if (condition(_array[i]))
+                {
+                    elem = _array[i];
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static bool MyFunc(T el)
@@ -143,20 +144,25 @@ namespace task4_1
         //Применение переданного действия ко всем элементам массива.
         public void ForEach( Action<T> action)
         {
-            Array.ForEach(_array, action);
+            for(int i = 0; i < _size; i++)
+            {
+                action(_array[i]);
+            }
+            //Array.ForEach(_array, action);
         }
 
         //Получение элементов массива, удовлетворяющих переданному условию.
-        public T[] GetElemntByCondition(Condition condition)
+        public T[] GetElemntByCondition(Func<T, bool> condition)
         {
             T[] arr = {};
             foreach (T el in _array)
             {
-                if(condition())
+                if(condition(el))
                     arr.Append(el);
             }
             return arr;
         }
+
         //Получение элементов массива выбранного типа.
         public T[] GetElemntByType(Type a)
         {
@@ -177,22 +183,37 @@ namespace task4_1
         }
 
         //Получение минимального/максимального элемента массива.
-        public T GetMin()
+        public static T max<T>(T first, T second) where T : IComparable<T>
         {
-            T[] array = _array;
-            Array.Sort(array);
-            return array[0];
+            if (second.CompareTo(first) > 0)
+            {
+                return second;
+            }
+            return first;
         }
-        public T GetMax()
-        {
-            T[] array = _array;
-            Array.Sort(array);
-            return array[_array.Length-1];
-        }
+
         //Получение минимального/максимального элемента массива по его проекции.
-        
+        public static T min<T>(T first, T second) where T : IComparable<T>
+        {
+            if (second.CompareTo(first) > 0)
+            {
+                return first;
+            }
+            return second;
+        }
+
+
         //Проекция элементов массива в другой тип.
-        
+        public T[] proect(Type a)
+        {
+            T[] new_array = new T[_size];
+            for (int i = 0; i < _size; i++)
+            {
+                new_array[i] = _array[i];
+            }
+            return new_array;
+        }
+
         //Получить заданное количество элементов массива с указанного индекса.
         public T[] getElemntsFromTo(int start, int end)
         {
@@ -200,6 +221,7 @@ namespace task4_1
             Array.Copy(_array, start, temp_array, 0, end-start);
             return temp_array;
         }
+
         //Итерирование по экземпляру массива с помощью цикла foreach
         public void AddIteration()
         {
