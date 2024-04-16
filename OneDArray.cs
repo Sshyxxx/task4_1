@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,6 +20,8 @@ namespace task4_1
         private T[] _array;
 
         public delegate bool Condition();
+
+        public int Size { get { return _size; } }
 
         int IArray<T>.GetValues {
             get { return _size; }
@@ -134,13 +137,6 @@ namespace task4_1
             return false;
         }
 
-        public static bool MyFunc(T el)
-        { 
-            if(el == null) 
-                return false;    
-            return true;
-        }
-
         //Применение переданного действия ко всем элементам массива.
         public void ForEach( Action<T> action)
         {
@@ -202,14 +198,18 @@ namespace task4_1
             return second;
         }
 
-
         //Проекция элементов массива в другой тип.
-        public T[] proect(Type a)
+        public IEnumerable<TResult> proect<TSource, TResult>(Func<T, TResult> selector)
         {
-            T[] new_array = new T[_size];
+            if (selector == null)
+            {
+                throw new SelectorNotFoundException();
+            }
+
+            TResult[] new_array = new TResult[_size];
             for (int i = 0; i < _size; i++)
             {
-                new_array[i] = _array[i];
+                new_array[i] = selector(_array[i]);
             }
             return new_array;
         }
@@ -225,8 +225,9 @@ namespace task4_1
         //Итерирование по экземпляру массива с помощью цикла foreach
         public void AddIteration()
         {
-            //foreach (T el in _array)
+            foreach (T el in _array){ }
         }
+
 
 
         #region Enumerable
@@ -240,5 +241,25 @@ namespace task4_1
             throw new NotImplementedException();
         }
         #endregion
+    }
+
+    [Serializable]
+    internal class SelectorNotFoundException : Exception
+    {
+        public SelectorNotFoundException()
+        {
+        }
+
+        public SelectorNotFoundException(string? message) : base(message)
+        {
+        }
+
+        public SelectorNotFoundException(string? message, Exception? innerException) : base(message, innerException)
+        {
+        }
+
+        protected SelectorNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
     }
 }

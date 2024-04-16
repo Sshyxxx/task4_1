@@ -15,6 +15,13 @@ class Program
         OneDArray<bool> four = new OneDArray<bool>();
         four.Add(true);
 
+        var Arrays = new List<OneDArray<string>>
+        {
+            one, one, one, one, one, one,
+        };
+
+        var sizes = Arrays.Select(u => u.Size);
+
 
         Console.WriteLine("Hello, World!");
     }
